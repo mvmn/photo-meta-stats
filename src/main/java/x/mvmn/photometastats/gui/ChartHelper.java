@@ -2,6 +2,7 @@ package x.mvmn.photometastats.gui;
 
 import java.awt.FontMetrics;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.jfree.chart.ChartFactory;
@@ -63,11 +64,44 @@ public class ChartHelper {
 	public static DefaultCategoryDataset createDataset(Map<String, ? extends Number> values) {
 		final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
-		// Sort alphabetically
-		for (final String key : new TreeSet<String>(values.keySet())) {
-			dataset.addValue(values.get(key), "Count", key);
+		Map<Long, Number> numericallySortedLong = new TreeMap<Long, Number>();
+		for (final Map.Entry<String, ? extends Number> entry : values.entrySet()) {
+			try {
+				Long key = Long.parseLong(entry.getKey().trim());
+				numericallySortedLong.put(key, entry.getValue());
+			} catch (NumberFormatException nfe) {
+				numericallySortedLong = null;
+				break;
+			}
 		}
 
+		Map<Double, Number> numericallySortedDouble = null;
+		if (numericallySortedLong == null) {
+			numericallySortedDouble = new TreeMap<Double, Number>();
+			for (final Map.Entry<String, ? extends Number> entry : values.entrySet()) {
+				try {
+					Double key = Double.parseDouble(entry.getKey().trim());
+					numericallySortedDouble.put(key, entry.getValue());
+				} catch (NumberFormatException nfe) {
+					numericallySortedDouble = null;
+					break;
+				}
+			}
+		}
+		if (numericallySortedLong != null) {
+			for (final Map.Entry<Long, Number> entry : numericallySortedLong.entrySet()) {
+				dataset.addValue(entry.getValue(), "Count", entry.getKey());
+			}
+		} else if (numericallySortedDouble != null) {
+			for (final Map.Entry<Double, Number> entry : numericallySortedDouble.entrySet()) {
+				dataset.addValue(entry.getValue(), "Count", entry.getKey());
+			}
+		} else {
+			// Sort alphabetically
+			for (final String key : new TreeSet<String>(values.keySet())) {
+				dataset.addValue(values.get(key), "Count", key);
+			}
+		}
 		return dataset;
 	}
 }

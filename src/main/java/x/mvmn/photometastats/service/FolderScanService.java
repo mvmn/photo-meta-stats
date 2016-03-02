@@ -96,6 +96,8 @@ public class FolderScanService {
 					finished = pool.isQuiescent();
 					if (!finished) {
 						pool.awaitTermination(1, TimeUnit.SECONDS);
+					} else {
+						pool.shutdown();
 					}
 				} catch (InterruptedException e) {
 				}

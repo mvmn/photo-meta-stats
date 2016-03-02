@@ -2,6 +2,7 @@ package x.mvmn.photometastats;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -107,16 +108,14 @@ public class PhotoMetaStats {
 			updateLabel();
 			if (result != null) {
 				final JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
+
+				FontMetrics fontMetrics = progressLabel.getFontMetrics(progressLabel.getFont());
 				for (final String key : new TreeSet<String>(result.keySet())) {
 					final String label = key.substring(key.indexOf("/") + 1);
-					tabbedPane.add(label,
-							new JScrollPane(ChartHelper.createChartPanel(label, result.get(key), progressLabel.getFontMetrics(progressLabel.getFont()))));
-					// System.out.println(tags.getKey() + ":");
-					// for (Map.Entry<String, AtomicInteger> vals : tags.getValue().entrySet()) {
-					// System.out.println("\t" + vals.getKey() + ": \t\t\t" + vals.getValue().get());
-					// }
+					tabbedPane.add(label, new JScrollPane(ChartHelper.createChartPanel(label, result.get(key), fontMetrics)));
 				}
 				final JFrame resultsFrame = new JFrame("Scan results for " + folderPath);
+				resultsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				resultsFrame.getContentPane().setLayout(new BorderLayout());
 				resultsFrame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 				SwingUtilities.invokeLater(new Runnable() {
@@ -132,6 +131,7 @@ public class PhotoMetaStats {
 				hideProgress.set(true);
 				if (this.progressWindow != null) {
 					this.progressWindow.setVisible(false);
+					this.progressWindow.dispose();
 				}
 			}
 		}
@@ -141,6 +141,7 @@ public class PhotoMetaStats {
 				this.progressWindow = progressWindow;
 				if (hideProgress.get()) {
 					progressWindow.setVisible(false);
+					progressWindow.dispose();
 				}
 			}
 		}
