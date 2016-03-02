@@ -66,7 +66,7 @@ public class PhotoStatsService {
 		new Thread(new Runnable() {
 			public void run() {
 				folderScanControl.awaitCompletion();
-				finishCallback.call(result);
+				finishCallback.call(folderScanControl.isInterrupted() ? null : result);
 			}
 		}).start();
 

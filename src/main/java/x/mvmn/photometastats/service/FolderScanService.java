@@ -82,7 +82,11 @@ public class FolderScanService {
 		}
 
 		public boolean isCompleted() {
-			return pool.isTerminated();
+			return pool.isQuiescent();
+		}
+
+		public boolean isInterrupted() {
+			return interrupt.get();
 		}
 
 		public void awaitCompletion() {
