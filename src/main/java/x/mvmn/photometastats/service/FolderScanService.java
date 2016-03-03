@@ -1,6 +1,7 @@
 package x.mvmn.photometastats.service;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FolderScanService {
+
+	protected int scanBreakLimit = 100;
 
 	protected static class FilesFoldersComparator implements Comparator<File> {
 		public int compare(File f1, File f2) {
@@ -24,14 +27,14 @@ public class FolderScanService {
 		private static final long serialVersionUID = -1013804045503042034L;
 
 		protected final ForkJoinPool pool;
-		protected final File folder;
+		protected final List<File> files;
 		protected final Function<String, Boolean> filter;
 		protected final Callback<File> callback;
 		protected final AtomicBoolean interrupt;
 
-		public ScanAction(ForkJoinPool pool, File folder, Function<String, Boolean> filter, Callback<File> callback, AtomicBoolean interrupt) {
+		public ScanAction(ForkJoinPool pool, List<File> files, Function<String, Boolean> filter, Callback<File> callback, AtomicBoolean interrupt) {
 			this.pool = pool;
-			this.folder = folder;
+			this.files = new ArrayList<File>(files);
 			this.filter = filter;
 			this.callback = callback;
 			this.interrupt = interrupt;
@@ -39,23 +42,36 @@ public class FolderScanService {
 
 		@Override
 		protected void compute() {
-			if (folder.exists() && folder.isDirectory()) {
-				List<File> files = Arrays.asList(folder.listFiles());
-				Collections.sort(files, FilesFoldersComparator.INSTANCE);
+			List<File> processingFiles = this.files;
+			while (processingFiles.size() > scanBreakLimit && !interrupt.get()) {
+				pool.submit(new ScanAction(pool, processingFiles.subList(0, scanBreakLimit), filter, callback, interrupt));
+				processingFiles = processingFiles.subList(scanBreakLimit, processingFiles.size());
+			}
+			Collections.sort(processingFiles, FilesFoldersComparator.INSTANCE);
 
-				for (File file : files) {
-					if (filter == null || filter.get(file.getName())) {
-						if (file.isDirectory()) {
-							pool.submit(new ScanAction(pool, file, filter, callback, interrupt));
-						} else {
-							try {
-								callback.call(file);
-							} catch (final Exception e) {
-								e.printStackTrace();
-							}
+			List<File> subFiles = new ArrayList<File>();
+			for (File file : processingFiles) {
+				if (interrupt.get()) {
+					break;
+				}
+				if (filter == null || filter.get(file.getName())) {
+					if (file.isDirectory()) {
+						subFiles.addAll(Arrays.asList(file.listFiles()));
+					} else {
+						try {
+							callback.call(file);
+						} catch (final Exception e) {
+							e.printStackTrace();
 						}
 					}
 				}
+				while (subFiles.size() > scanBreakLimit && !interrupt.get()) {
+					pool.submit(new ScanAction(pool, subFiles.subList(0, scanBreakLimit), filter, callback, interrupt));
+					subFiles = new ArrayList<File>(subFiles.subList(scanBreakLimit, subFiles.size()));
+				}
+			}
+			if (!interrupt.get() && subFiles.size() > 0) {
+				pool.submit(new ScanAction(pool, subFiles, filter, callback, interrupt));
 			}
 		}
 	}
@@ -63,7 +79,9 @@ public class FolderScanService {
 	public FolderScanControl scan(File folder, Function<String, Boolean> filter, Callback<File> callback) {
 		final ForkJoinPool pool = new ForkJoinPool();
 		AtomicBoolean interrupt = new AtomicBoolean(false);
-		pool.submit(new ScanAction(pool, folder, filter, callback, interrupt));
+		if (folder.exists() && folder.isDirectory()) {
+			pool.submit(new ScanAction(pool, Arrays.asList(folder.listFiles()), filter, callback, interrupt));
+		}
 
 		return new FolderScanControl(interrupt, pool);
 	}
@@ -103,5 +121,13 @@ public class FolderScanService {
 				}
 			}
 		}
+	}
+
+	public int getScanBreakLimit() {
+		return scanBreakLimit;
+	}
+
+	public void setScanBreakLimit(int scanBreakLimit) {
+		this.scanBreakLimit = scanBreakLimit;
 	}
 }
