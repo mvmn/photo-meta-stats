@@ -100,11 +100,10 @@
 						<configuration>
 							<tasks>
 								<echo file="${project.build.directory}/run.sh" append="false">
-									java
-									-jar ${project.artifactId}-${project.version}.jar -Xmx720m
+									java&#x20;-jar&#x20;${project.artifactId}-${project.version}.jar&#x20;-Xmx720m
 								</echo>
 								<echo file="${project.build.directory}/run.bat" append="false">
-									java -jar ${project.artifactId}-${project.version}.jar -Xmx720m
+									java&#x20;-jar&#x20;${project.artifactId}-${project.version}.jar&#x20;-Xmx720m
 								</echo>
 							</tasks>
 						</configuration>
