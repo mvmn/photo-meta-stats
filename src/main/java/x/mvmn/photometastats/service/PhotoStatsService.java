@@ -44,7 +44,7 @@ public class PhotoStatsService {
 	}
 
 	public PhotoScanControl scan(final File folder, final Function<String, Boolean> filesFilter, final Function<Directory, Boolean> metadataDirectoryFilter,
-			final Function<Tag, Boolean> metadataTagFilter, final CallbackLong progressCallback,
+			final Function<Tag, Boolean> metadataTagFilter, final ScanCallback progressCallback,
 			final Callback<ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>>> finishCallback) {
 		final ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>> result = new ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>>();
 		final AtomicLong scannedFilesCount = new AtomicLong();
@@ -54,10 +54,13 @@ public class PhotoStatsService {
 				try {
 					Metadata metadata = ImageMetadataReader.readMetadata(file);
 					populateMap(result, metadata, metadataDirectoryFilter, metadataTagFilter);
-					progressCallback.call(scannedFilesCount.incrementAndGet());
-				} catch (Exception e) {
-					if (!e.getMessage().contains("format is not supported")) {
-						System.err.println("Metadata read failed - " + e.getMessage() + " - for " + file.getAbsolutePath());
+					progressCallback.call(scannedFilesCount.incrementAndGet(), "Scan success: " + file.getAbsolutePath() + " - metadata size " + result.size(),
+							null);
+				} catch (Throwable e) {
+					if (e.getMessage().contains("format is not supported")) {
+						progressCallback.call(-1, "Unsupported file format: " + file.getAbsolutePath(), null);
+					} else {
+						progressCallback.call(-1, "Unexpected error: " + file.getAbsolutePath() + " scan error.", e);
 					}
 				}
 			}
