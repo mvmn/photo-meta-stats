@@ -1,15 +1,13 @@
-Make
-Model
-Aperture Value
-Digital Zoom Ratio
-Exposure Time
-F-Number
-Flash
-Focal Length
-Focal Length 35
-Gain Control
-ISO Speed Ratings
-Lens Make
-Lens Model
-Max Aperture Value
-Shutter Speed Value
+EXIF IFD0/Make
+EXIF IFD0/Model
+EXIF SubIFD/Digital Zoom Ratio
+EXIF SubIFD/Exposure Time
+EXIF SubIFD/F-Number
+EXIF SubIFD/Flash
+EXIF SubIFD/Focal Length
+EXIF SubIFD/Focal Length 35
+EXIF SubIFD/Gain Control
+EXIF SubIFD/ISO Speed Ratings
+EXIF SubIFD/Lens Make
+EXIF SubIFD/Lens Model
+EXIF SubIFD/Shutter Speed Value

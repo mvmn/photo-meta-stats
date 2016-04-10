@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import x.mvmn.photometastats.model.MetaKey;
 import x.mvmn.photometastats.service.FolderScanService.FolderScanControl;
 
 import com.drew.imaging.ImageMetadataReader;
@@ -45,8 +46,8 @@ public class PhotoStatsService {
 
 	public PhotoScanControl scan(final File folder, final Function<String, Boolean> filesFilter, final Function<Directory, Boolean> metadataDirectoryFilter,
 			final Function<Tag, Boolean> metadataTagFilter, final ScanCallback progressCallback,
-			final Callback<ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>>> finishCallback) {
-		final ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>> result = new ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>>();
+			final Callback<ConcurrentHashMap<MetaKey, ConcurrentHashMap<String, AtomicInteger>>> finishCallback) {
+		final ConcurrentHashMap<MetaKey, ConcurrentHashMap<String, AtomicInteger>> result = new ConcurrentHashMap<MetaKey, ConcurrentHashMap<String, AtomicInteger>>();
 		final AtomicLong scannedFilesCount = new AtomicLong();
 		final FolderScanControl folderScanControl = scanService.scan(folder, filesFilter, new Callback<File>() {
 			@Override
@@ -76,13 +77,13 @@ public class PhotoStatsService {
 		return new PhotoScanControl(folderScanControl, scannedFilesCount);
 	}
 
-	protected void populateMap(ConcurrentHashMap<String, ConcurrentHashMap<String, AtomicInteger>> map, Metadata metadata,
+	protected void populateMap(ConcurrentHashMap<MetaKey, ConcurrentHashMap<String, AtomicInteger>> map, Metadata metadata,
 			Function<Directory, Boolean> metadataDirectoryFilter, Function<Tag, Boolean> metadataTagFilter) {
 		for (final Directory directory : metadata.getDirectories()) {
 			if (metadataDirectoryFilter == null || metadataDirectoryFilter.get(directory)) {
 				for (final Tag tag : directory.getTags()) {
 					if (metadataTagFilter == null || metadataTagFilter.get(tag)) {
-						final String key = directory.getName() + "/" + tag.getTagName();
+						final MetaKey key = new MetaKey(directory.getName(), tag.getTagName());
 						ConcurrentHashMap<String, AtomicInteger> vals = map.get(key);
 						if (vals == null) {
 							vals = new ConcurrentHashMap<String, AtomicInteger>();
